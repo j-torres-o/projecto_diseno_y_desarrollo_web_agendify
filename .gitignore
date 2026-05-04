@@ -1,4 +1,6 @@
+resumenes_clases/
 __pycache__/
+*.py[cod]
 *.py[cod]
 *$py.class
 .venv/
