@@ -1,2 +1,6 @@
 flask
-psycopg2-binary
+mysql-connector-python
+python-dotenv
+pytest
+pytest-mock
+pytest-cov
