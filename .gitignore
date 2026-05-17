@@ -1,13 +1,32 @@
+# ============================================================================
+# ARCHIVO: .gitignore
+# PROPÓSITO: Especifica archivos y directorios que Git debe ignorar.
+# ============================================================================
+
+# Resúmenes de clases académicas (opcional)
 resumenes_clases/
+
+# Caché de Python
 __pycache__/
 *.py[cod]
-*.py[cod]
 *$py.class
+
+# Entornos virtuales de desarrollo
 .venv/
 venv/
 ENV/
 env/
+
+# Secretos y configuraciones sensibles (¡NUNCA subir contraseñas a GitHub!)
 .env
+.env.test
+
+# IDEs y editores de código
 .vscode/
 .idea/
 *.log
+
+# Suite de Pruebas y Reportes de Cobertura
+.pytest_cache/
+.coverage
+htmlcov/

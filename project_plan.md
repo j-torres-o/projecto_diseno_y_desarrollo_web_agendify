@@ -17,8 +17,8 @@ Antes de empezar, necesitamos saber qué herramientas vamos a usar. Cada element
 | **JavaScript (JS)** | Interacción y Comportamiento | Es el músculo o la "magia". Permite que la página reaccione a las acciones del usuario (ej: cuando haces clic en un botón, JS hace algo). Se encarga de manipular el **DOM** (el modelo interno de la página web). |
 | **Python** | Lenguaje de Programación | El lenguaje que usaremos para el "cerebro" de la aplicación (el *backend*). Es conocido por su legibilidad y facilidad de uso. |
 | **Flask** | Micro-framework (Backend) | Piensa en Flask como el **gestor de tráfico** de tu aplicación. No es un lenguaje, sino un conjunto de herramientas de Python que facilita la recepción de peticiones web, la conexión a la base de datos y el envío de respuestas. Es más simple que otros *frameworks* grandes, perfecto para aprender. |
-| **PostgreSQL** | Base de Datos (Database) | Es un lugar ultra-organizado donde guardaremos toda la información (usuarios, eventos). Es **Relacional**, lo que significa que los datos están estructurados en *tablas* y las tablas están conectadas entre sí (ej: el evento está conectado al usuario que lo creó). |
-| **3-Layer Model** | Modelo de 3 Capas | Es la arquitectura estándar. Imagínalo así: **1. Presentación** (Lo que ve el usuario: HTML/CSS/JS). **2. Lógica** (El cerebro: Flask, que procesa las reglas). **3. Datos** (La memoria: PostgreSQL). |
+| **MySQL** | Base de Datos (Database) | Es un lugar ultra-organizado donde guardaremos toda la información (usuarios, eventos). Es **Relacional**, lo que significa que los datos están estructurados en *tablas* y las tablas están conectadas entre sí (ej: el evento está conectado al usuario que lo creó). |
+| **3-Layer Model** | Modelo de 3 Capas | Es la arquitectura estándar. Imagínalo así: **1. Presentación** (Lo que ve el usuario: HTML/CSS/JS). **2. Lógica** (El cerebro: Flask, que procesa las reglas). **3. Datos** (La memoria: MySQL). |
 
 ---
 
@@ -35,8 +35,8 @@ Aquí te explicamos el proceso que sigue la información, capa por capa.
     *   **POST** se usa para *enviar* información al servidor para que la procese (ej: enviar un formulario con credenciales de login o datos de un evento).
 3.  **La Ruta (El Servidor):** El *router* de **Flask** recibe esta petición POST y la dirige a una función específica (ej: `/evento/crear`).
 4.  **La Lógica (El Cerebro):** El código de **Flask** entra en acción. Recoge los datos enviados (validación: "¿Este correo es válido?", "¿Existe esta fecha?") y prepara un comando estructurado (SQL).
-5.  **La Persistencia (La Memoria):** Flask utiliza un "conductor" (driver, como `psycopg2`) para hablar con **PostgreSQL**. El comando SQL (`INSERT`) le dice a la base de datos: "Guarda estos nuevos datos en la tabla `eventos`".
-6.  **La Respuesta (El Resultado):** PostgreSQL confirma que los datos se guardaron. Flask toma esa confirmación, actualiza la plantilla HTML, y envía la página completa de vuelta al navegador para que el usuario vea su nuevo evento.
+5.  **La Persistencia (La Memoria):** Flask utiliza un "conductor" (driver, como `mysql-connector-python`) para hablar con **MySQL**. El comando SQL (`INSERT`) le dice a la base de datos: "Guarda estos nuevos datos en la tabla `eventos`".
+6.  **La Respuesta (El Resultado):** MySQL confirma que los datos se guardaron. Flask toma esa confirmación, actualiza la plantilla HTML, y envía la página completa de vuelta al navegador para que el usuario vea su nuevo evento.
 
 ### 🧭 El Significado de CRUD
 
@@ -65,9 +65,9 @@ Este es el plan por fases. ¡No intentes hacer todo a la vez! Sigue el orden par
 ### 📚 Fase 2: La Fundación (Base de Datos y Configuración)
 *   **Objetivo:** Hacer que la aplicación pueda "pensar" y "recordar" cosas.
 *   **Tareas:**
-    *   Configurar **PostgreSQL** y crear las tablas `usuarios` y `eventos`.
-    *   Configurar el entorno de Python (Virtual Environment) e instalar las bibliotecas necesarias (`flask`, `psycopg2`).
-    *   Establecer la **conexión** inicial entre Flask y PostgreSQL. (¡En este punto, ya podemos "hablar" con la base de datos, aunque aún no le pidamos nada útil!).
+    *   Configurar **MySQL** y crear las tablas `usuarios` y `eventos`.
+    *   Configurar el entorno de Python (Virtual Environment) e instalar las bibliotecas necesarias (`flask`, `mysql-connector-python`, `python-dotenv`).
+    *   Establecer la **conexión** inicial entre Flask y MySQL. (¡En este punto, ya podemos "hablar" con la base de datos, aunque aún no le pidamos nada útil!).
 
 ### 🧠 Fase 3: El Cerebro (Lógica de Negocio y CRUD)
 *   **Objetivo:** Llenar la aplicación de funcionalidad real.
@@ -77,10 +77,11 @@ Este es el plan por fases. ¡No intentes hacer todo a la vez! Sigue el orden par
     *   **Lectura y Eliminación:** Implementar la vista de la lista de eventos y el botón para borrarlos (**R** y **D** de CRUD).
     *   **Edición:** Implementar la capacidad de modificar los detalles de un evento ya existente (**U** de CRUD).
 
-### ✨ Fase 4: Pulido y Entrega (Polish & Deployment)
-*   **Objetivo:** Hacer que la aplicación parezca un producto profesional y que funcione perfectamente.
+### ✨ Fase 4: Pulido y Entrega (Polish & Deployment) [ENTREGA DE CALIDAD COMPLETADA]
+*   **Objetivo:** Hacer que la aplicación parezca un producto profesional y que funcione perfectamente con validación objetiva.
 *   **Tareas:**
     *   Mejorar el diseño con efectos CSS (*transitions*, `:hover`) para darle un toque "corporativo" o profesional.
-    *   Realizar **Testing de punta a punta (End-to-End Testing)**: Simular el uso completo de la aplicación, desde que el usuario abre la web, hasta que elimina el último evento.
+    *   Realizar **Testing de punta a punta (End-to-End Testing)**: [COMPLETADO] Simular el uso completo de la aplicación, desde que el usuario abre la web, hasta que elimina el último evento.
+    *   Implementar **Pruebas Automatizadas**: [COMPLETADO] Suite de pruebas robusta con Pytest integrada por tests unitarios (con mocks de base de datos) y tests de integración sobre API y rutas web, garantizando 0 errores de regresión.
 
 **¡Recuerda, aprendiz!** Este proyecto te enseñará no solo a escribir código, sino a pensar como un arquitecto de software, entendiendo cómo interactúan las capas de presentación, lógica y datos. ¡Mucho éxito!
