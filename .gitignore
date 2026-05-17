@@ -3,7 +3,7 @@
 # PROPÓSITO: Especifica archivos y directorios que Git debe ignorar.
 # ============================================================================
 
-# Resúmenes de clases académicas y planeaciones locales
+# Resúmenes de clases académicas (opcional)
 resumenes_clases/
 project_plan.md
 
