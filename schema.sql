@@ -21,23 +21,35 @@ CREATE DATABASE IF NOT EXISTS agendify
 -- Seleccionar la base de datos para las operaciones siguientes.
 USE agendify;
 
+-- Eliminar tablas existentes para garantizar una inicialización limpia
+DROP TABLE IF EXISTS invitaciones_evento;
+DROP TABLE IF EXISTS eventos;
+DROP TABLE IF EXISTS usuarios;
+
+-- ============================================================================
+-- TABLA: usuarios
+-- PROPÓSITO: Almacena la información de los usuarios del sistema.
+-- CAMPOS:
+--   es_admin      → Flag para control de permisos de administrador (0 = no, 1 = sí).
+--   activo        → Flag para permitir o bloquear el acceso de un usuario (0 = inactivo, 1 = activo).
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS usuarios (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    nombre          VARCHAR(100)    NOT NULL,
+    email           VARCHAR(150)    NOT NULL UNIQUE,
+    password_hash   VARCHAR(255)    NOT NULL,
+    es_admin        TINYINT(1)      NOT NULL DEFAULT 0,
+    activo          TINYINT(1)      NOT NULL DEFAULT 1,
+    created_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP
+                                    ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- ============================================================================
 -- TABLA: eventos
 -- PROPÓSITO: Almacena la información de cada evento del calendario.
---
 -- CAMPOS:
---   id            → Identificador único, autoincremental (Primary Key).
---   titulo        → Nombre del evento. Obligatorio, entre 3 y 100 caracteres.
---   descripcion   → Detalle extendido del evento. Opcional.
---   fecha         → Fecha del evento (solo fecha, sin hora). Obligatorio.
---   hora          → Hora de inicio del evento. Obligatorio.
---   ubicacion     → Lugar físico o enlace virtual. Opcional.
---   capacidad     → Número máximo de asistentes. Debe ser mayor a 0.
---   tipo_evento   → Categoría del evento (ENUM restringido).
---   prioridad     → Nivel de urgencia (ENUM restringido).
---   recordatorio  → Si se debe enviar recordatorio (booleano).
---   created_at    → Fecha/hora de creación (se asigna automáticamente).
---   updated_at    → Fecha/hora de última actualización (se actualiza sola).
+--   creador_id    → Identificador del usuario creador (Foreign Key).
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS eventos (
     id              INT AUTO_INCREMENT PRIMARY KEY,
@@ -52,13 +64,26 @@ CREATE TABLE IF NOT EXISTS eventos (
     prioridad       ENUM('baja', 'media', 'alta')
                                     NOT NULL DEFAULT 'media',
     recordatorio    BOOLEAN         DEFAULT FALSE,
+    creador_id      INT             NOT NULL,
     created_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP
                                     ON UPDATE CURRENT_TIMESTAMP,
 
-    -- Restricciones de integridad a nivel de base de datos.
-    -- Estas actúan como una "segunda línea de defensa" después de la
-    -- validación en Python, asegurando que datos inválidos nunca se almacenen.
+    -- Restricciones de integridad
     CONSTRAINT chk_capacidad    CHECK (capacidad > 0),
-    CONSTRAINT chk_titulo_len   CHECK (CHAR_LENGTH(titulo) >= 3)
+    CONSTRAINT chk_titulo_len   CHECK (CHAR_LENGTH(titulo) >= 3),
+    CONSTRAINT fk_evento_creador FOREIGN KEY (creador_id) REFERENCES usuarios(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ============================================================================
+-- TABLA: invitaciones_evento
+-- PROPÓSITO: Tabla asociativa muchos a muchos para el sistema de invitaciones.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS invitaciones_evento (
+    evento_id       INT NOT NULL,
+    usuario_id      INT NOT NULL,
+    created_at      TIMESTAMP       DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (evento_id, usuario_id),
+    CONSTRAINT fk_inv_evento FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE,
+    CONSTRAINT fk_inv_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

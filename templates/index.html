@@ -158,6 +158,25 @@
         <!-- El contenido será inyectado por static/js/main.js -->
     </div>
 
+    <!-- Modal de Confirmación Premium en Interfaz -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-md transition-all duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden flex flex-col p-lg relative transform scale-95 transition-transform duration-300">
+            <div class="flex items-start gap-md mb-md">
+                <div class="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+                    <span class="material-symbols-outlined text-[28px]">warning</span>
+                </div>
+                <div class="space-y-xs">
+                    <h3 class="text-lg font-bold text-blue-950" id="confirmModalTitle">¿Está seguro?</h3>
+                    <p class="text-sm text-slate-500 font-body-sm leading-relaxed" id="confirmModalMessage">Esta acción es permanente y no se puede deshacer.</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-sm mt-md">
+                <button id="confirmModalCancelBtn" class="px-md py-sm bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition-all">Cancelar</button>
+                <button id="confirmModalConfirmBtn" class="px-md py-sm bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-lg text-xs shadow-sm hover:shadow-md transition-all">Eliminar Registro</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Cargamos nuestra lógica de JavaScript al final para asegurar que el HTML ya exista -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>

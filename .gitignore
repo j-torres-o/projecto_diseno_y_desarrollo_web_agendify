@@ -31,3 +31,12 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Módulos y dependencias locales
+node_modules/
+package-lock.json
+
+# Exclusión de carpeta de documentación para GitHub (Requerimiento del usuario)
+documentacion/
+resumenes_clases/
+project_plan.md

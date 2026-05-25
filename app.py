@@ -46,9 +46,11 @@ def create_app():
     # Esto mantiene el código organizado y modular.
     from routes.main_routes import main_bp
     from routes.api_routes import api_bp
+    from routes.auth_routes import auth_bp
 
     app.register_blueprint(main_bp)   # Rutas de páginas HTML (/)
     app.register_blueprint(api_bp)    # Rutas de la API (/api/...)
+    app.register_blueprint(auth_bp)   # Rutas de Autenticación (/api/auth)
 
     # ---- Manejadores de Error Globales ----
     # Estos capturan errores que no fueron manejados por las rutas individuales

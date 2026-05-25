@@ -19,6 +19,7 @@
 import html
 from datetime import date, datetime, time
 from models.entidad_base import EntidadBase
+from database import Database
 
 
 class Evento(EntidadBase):
@@ -70,7 +71,7 @@ class Evento(EntidadBase):
     TIPOS_VALIDOS = ['taller', 'reunion', 'social', 'conferencia', 'otro']
     PRIORIDADES_VALIDAS = ['baja', 'media', 'alta']
 
-    def __init__(self, titulo, fecha, hora, ubicacion='', descripcion='',
+    def __init__(self, titulo, fecha, hora, creador_id=None, creador_nombre=None, ubicacion='', descripcion='',
                  capacidad=1, tipo_evento='otro', prioridad='media',
                  recordatorio=False, id=None, created_at=None, updated_at=None):
         """
@@ -84,6 +85,8 @@ class Evento(EntidadBase):
             titulo (str): Nombre del evento.
             fecha (str): Fecha en formato 'YYYY-MM-DD'.
             hora (str): Hora en formato 'HH:MM' o 'HH:MM:SS'.
+            creador_id (int, optional): ID del usuario creador del evento.
+            creador_nombre (str, optional): Nombre del usuario creador.
             ubicacion (str, optional): Lugar del evento.
             descripcion (str, optional): Descripción detallada.
             capacidad (int, optional): Número máximo de asistentes. Default: 1.
@@ -103,6 +106,8 @@ class Evento(EntidadBase):
         self.titulo = self._sanitizar(titulo)
         self.fecha = fecha
         self.hora = hora
+        self.creador_id = creador_id
+        self.creador_nombre = creador_nombre
         self.ubicacion = self._sanitizar(ubicacion) if ubicacion else ''
         self.descripcion = self._sanitizar(descripcion) if descripcion else ''
         self.capacidad = capacidad
@@ -219,13 +224,14 @@ class Evento(EntidadBase):
             tuple: (lista_de_nombres_de_campo, lista_de_valores)
         """
         campos = [
-            'titulo', 'fecha', 'hora', 'ubicacion', 'descripcion',
+            'titulo', 'fecha', 'hora', 'creador_id', 'ubicacion', 'descripcion',
             'capacidad', 'tipo_evento', 'prioridad', 'recordatorio'
         ]
         valores = [
             self.titulo,
             str(self.fecha),
             str(self.hora),
+            self.creador_id,
             self.ubicacion,
             self.descripcion,
             self.capacidad,
@@ -251,6 +257,8 @@ class Evento(EntidadBase):
             'titulo': self.titulo,
             'fecha': str(self.fecha) if self.fecha else None,
             'hora': str(self.hora) if self.hora else None,
+            'creador_id': self.creador_id,
+            'creador_nombre': self.creador_nombre,
             'ubicacion': self.ubicacion,
             'descripcion': self.descripcion,
             'capacidad': self.capacidad,
@@ -282,6 +290,8 @@ class Evento(EntidadBase):
             titulo=data.get('titulo', ''),
             fecha=data.get('fecha', ''),
             hora=data.get('hora', ''),
+            creador_id=data.get('creador_id'),
+            creador_nombre=data.get('creador_nombre'),
             ubicacion=data.get('ubicacion', ''),
             descripcion=data.get('descripcion', ''),
             capacidad=data.get('capacidad', 1),
@@ -290,3 +300,144 @@ class Evento(EntidadBase):
             recordatorio=data.get('recordatorio', False),
             id=data.get('id')
         )
+
+    @classmethod
+    def obtener_paginados(cls, page=1, limit=10, fecha=None, tipo_evento=None, prioridad=None, creador_id=None):
+        """
+        Sobrescribe obtener_paginados para incluir el creador_nombre en los eventos y admitir filtros dinámicos.
+        """
+        offset = (page - 1) * limit
+        where_clauses = []
+        params = []
+
+        if fecha:
+            where_clauses.append("e.fecha = %s")
+            params.append(fecha)
+        if tipo_evento:
+            where_clauses.append("e.tipo_evento = %s")
+            params.append(tipo_evento)
+        if prioridad:
+            where_clauses.append("e.prioridad = %s")
+            params.append(prioridad)
+        if creador_id:
+            where_clauses.append("e.creador_id = %s")
+            params.append(creador_id)
+
+        where_str = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+
+        count_query = f"SELECT COUNT(*) as total FROM eventos e {where_str}"
+        total_res = Database.execute_query(count_query, tuple(params) if params else None, fetch_one=True)
+        total = total_res['total'] if total_res else 0
+        
+        query = f"""
+            SELECT e.*, u.nombre as creador_nombre
+            FROM eventos e
+            INNER JOIN usuarios u ON e.creador_id = u.id
+            {where_str}
+            ORDER BY e.fecha ASC, e.hora ASC
+            LIMIT %s OFFSET %s
+        """
+        params_query = params.copy()
+        params_query.extend([limit, offset])
+        resultado = Database.execute_query(query, tuple(params_query), fetch_all=True)
+        return resultado if resultado else [], total
+
+    @classmethod
+    def obtener_paginados_por_usuario(cls, usuario_id, page=1, limit=10, fecha=None, tipo_evento=None, prioridad=None, creador_id=None):
+        """
+        Obtiene de forma paginada y con soporte para filtros dinámicos los eventos creados por el usuario o a los que ha sido invitado.
+        """
+        offset = (page - 1) * limit
+        where_clauses = ["(e.creador_id = %s OR ie.usuario_id = %s)"]
+        params = [usuario_id, usuario_id]
+
+        if fecha:
+            where_clauses.append("e.fecha = %s")
+            params.append(fecha)
+        if tipo_evento:
+            where_clauses.append("e.tipo_evento = %s")
+            params.append(tipo_evento)
+        if prioridad:
+            where_clauses.append("e.prioridad = %s")
+            params.append(prioridad)
+        if creador_id:
+            where_clauses.append("e.creador_id = %s")
+            params.append(creador_id)
+
+        where_str = " WHERE " + " AND ".join(where_clauses)
+        
+        # 1. CONSULTA DE CONTEO TOTAL:
+        count_query = f"""
+            SELECT COUNT(DISTINCT e.id) as total 
+            FROM eventos e
+            LEFT JOIN invitaciones_evento ie ON e.id = ie.evento_id
+            {where_str}
+        """
+        total_resultado = Database.execute_query(count_query, tuple(params), fetch_one=True)
+        total = total_resultado['total'] if total_resultado else 0
+        
+        # 2. CONSULTA DE REGISTROS PAGINADOS:
+        query = f"""
+            SELECT DISTINCT e.*, u.nombre as creador_nombre 
+            FROM eventos e
+            INNER JOIN usuarios u ON e.creador_id = u.id
+            LEFT JOIN invitaciones_evento ie ON e.id = ie.evento_id
+            {where_str}
+            ORDER BY e.fecha ASC, e.hora ASC 
+            LIMIT %s OFFSET %s
+        """
+        params_query = params.copy()
+        params_query.extend([limit, offset])
+        resultado = Database.execute_query(query, tuple(params_query), fetch_all=True)
+        return resultado if resultado else [], total
+
+    def agregar_invitado(self, usuario_id):
+        """
+        Asocia un usuario al evento insertándolo en la tabla invitaciones_evento.
+
+        Args:
+            usuario_id (int): El ID del usuario a invitar.
+        """
+        query = "INSERT IGNORE INTO invitaciones_evento (evento_id, usuario_id) VALUES (%s, %s)"
+        Database.execute_query(query, (self.id, usuario_id))
+
+    def eliminar_invitado(self, usuario_id):
+        """
+        Elimina un usuario de las invitaciones del evento.
+
+        Args:
+            usuario_id (int): El ID del usuario a desinvitar.
+        """
+        query = "DELETE FROM invitaciones_evento WHERE evento_id = %s AND usuario_id = %s"
+        Database.execute_query(query, (self.id, usuario_id))
+
+    def obtener_invitados(self):
+        """
+        Retorna la lista de usuarios invitados a este evento.
+
+        Returns:
+            list[dict]: Lista de usuarios invitados.
+        """
+        query = """
+            SELECT u.id, u.nombre, u.email 
+            FROM usuarios u
+            INNER JOIN invitaciones_evento ie ON u.id = ie.usuario_id
+            WHERE ie.evento_id = %s
+        """
+        resultado = Database.execute_query(query, (self.id,), fetch_all=True)
+        return resultado if resultado else []
+
+    @classmethod
+    def obtener_por_id(cls, id):
+        """
+        Sobrescribe obtener_por_id para traer el creador_nombre de forma transparente.
+        """
+        query = """
+            SELECT e.*, u.nombre as creador_nombre
+            FROM eventos e
+            INNER JOIN usuarios u ON e.creador_id = u.id
+            WHERE e.id = %s
+        """
+        return Database.execute_query(query, (id,), fetch_one=True)
+
+

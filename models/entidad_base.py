@@ -192,6 +192,49 @@ class EntidadBase:
         return resultado if resultado else []
 
     @classmethod
+    def obtener_paginados(cls, page=1, limit=10):
+        """
+        Obtiene un subconjunto de registros de la tabla mediante paginación (SELECT LIMIT/OFFSET).
+
+        Este método calcula dinámicamente el desplazamiento (OFFSET) en base al número de página
+        y límite requeridos. Adicionalmente realiza una consulta COUNT(*) previa para conocer el 
+        número total de registros existentes en la tabla, lo cual le permite al frontend armar la
+        arquitectura de botones de navegación (Siguiente, Anterior, etc.).
+
+        Args:
+            page (int): El número de página actual que se desea visualizar (1-indexed).
+            limit (int): La cantidad máxima de registros por página.
+
+        Returns:
+            tuple: (lista_de_diccionarios_de_items, total_de_registros_existentes)
+        
+        Raises:
+            MySQLError: Si la consulta a la base de datos presenta fallas de sintaxis o conexión.
+        """
+        # Cálculo de la compensación (OFFSET) de registros a ignorar en base a la página.
+        # Por ejemplo: Si page=2 y limit=5, el offset = (2-1)*5 = 5. Ignoramos los primeros 5 ítems.
+        offset = (page - 1) * limit
+        
+        # 1. CONSULTA DE CONTEO TOTAL:
+        # Requerida para que el frontend calcule el total_pages = ceil(total / limit)
+        count_query = f"SELECT COUNT(*) as total FROM {cls.TABLA}"
+        total_resultado = Database.execute_query(count_query, fetch_one=True)
+        total = total_resultado['total'] if total_resultado else 0
+        
+        # 2. CONSULTA DE REGISTROS PAGINADOS:
+        # Intentamos ordenar preferencialmente por fecha y hora (ideal para eventos),
+        # si la tabla no posee estas columnas, cae automáticamente en el ordenamiento por ID de forma segura.
+        try:
+            query = f"SELECT * FROM {cls.TABLA} ORDER BY fecha ASC, hora ASC LIMIT %s OFFSET %s"
+            resultado = Database.execute_query(query, (limit, offset), fetch_all=True)
+        except Exception:
+            # Plan de contingencia si fallan columnas 'fecha'/'hora'
+            query = f"SELECT * FROM {cls.TABLA} ORDER BY id ASC LIMIT %s OFFSET %s"
+            resultado = Database.execute_query(query, (limit, offset), fetch_all=True)
+            
+        return resultado if resultado else [], total
+
+    @classmethod
     def obtener_por_id(cls, id):
         """
         Obtiene un registro específico por su ID (operación READ - SELECT WHERE).

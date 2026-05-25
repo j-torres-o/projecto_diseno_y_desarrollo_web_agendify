@@ -76,28 +76,27 @@ def setup_test_database():
         with open(schema_path, 'r', encoding='utf-8') as f:
             schema_sql = f.read()
             
-        # Ejecutar sentencias. Filtramos y ejecutamos solo la creación de tablas eventos.
-        # Esto evita re-crear la base de datos agendify de producción/desarrollo descrita en el schema.sql.
-        # Buscamos la sentencia CREATE TABLE.
-        create_table_sql = ""
-        in_create_table = False
+        # 3. Crear las tablas a partir del archivo schema.sql en la base de datos agendify_test
+        # Primero eliminamos las tablas existentes para comenzar con un esquema limpio.
+        cursor_test.execute("DROP TABLE IF EXISTS invitaciones_evento;")
+        cursor_test.execute("DROP TABLE IF EXISTS eventos;")
+        cursor_test.execute("DROP TABLE IF EXISTS usuarios;")
+        conn_test.commit()
+
+        # Separamos por punto y coma para obtener comandos individuales y ejecutamos las de creación
+        statements = schema_sql.split(';')
+        tablas_creadas = 0
+        for stmt in statements:
+            stmt_clean = stmt.strip()
+            if "CREATE TABLE" in stmt_clean.upper():
+                cursor_test.execute(stmt_clean)
+                tablas_creadas += 1
         
-        for line in schema_sql.splitlines():
-            if "CREATE TABLE IF NOT EXISTS eventos" in line or "CREATE TABLE eventos" in line:
-                in_create_table = True
-            if in_create_table:
-                create_table_sql += line + "\n"
-                if ") ENGINE=InnoDB;" in line:
-                    break
-        
-        if create_table_sql:
-            # Primero eliminamos la tabla existente para comenzar con un esquema limpio
-            cursor_test.execute("DROP TABLE IF EXISTS eventos;")
-            cursor_test.execute(create_table_sql)
-            conn_test.commit()
-            print("\nTabla 'eventos' creada exitosamente en base de datos 'agendify_test'.")
+        conn_test.commit()
+        if tablas_creadas >= 3:
+            print(f"\nTablas creadas exitosamente en base de datos 'agendify_test' ({tablas_creadas} tablas).")
         else:
-            pytest.exit("❌ No se pudo extraer la definición de la tabla 'eventos' de schema.sql.")
+            pytest.exit("❌ No se pudieron recrear las tablas requeridas desde schema.sql.")
             
         cursor_test.close()
         conn_test.close()
@@ -112,12 +111,14 @@ def setup_test_database():
 @pytest.fixture(autouse=True)
 def clean_db():
     """
-    Limpia (vacía) la tabla de eventos antes de ejecutar cada prueba individual.
+    Limpia (vacía) las tablas de eventos y usuarios antes de ejecutar cada prueba individual.
     Garantiza el aislamiento total de los datos en las pruebas de integración.
     """
     # Permitimos continuar sin limpiar si se trata de una prueba puramente unitaria (mockeada)
     try:
+        Database.execute_query("DELETE FROM invitaciones_evento;")
         Database.execute_query("DELETE FROM eventos;")
+        Database.execute_query("DELETE FROM usuarios;")
     except mysql.connector.Error:
         # Si falla porque la BD no está configurada o mockeada, se ignora en unitarios
         pass
@@ -132,3 +133,31 @@ def client():
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
+
+# Fixture para crear un usuario de prueba persistente en base de datos
+@pytest.fixture
+def setup_user():
+    """
+    Crea, valida y guarda un usuario de prueba en la base de datos de test.
+    """
+    from models.usuario import Usuario
+    # Garantizamos limpiar usuarios duplicados
+    try:
+        Database.execute_query("DELETE FROM usuarios;")
+    except:
+        pass
+    user = Usuario(nombre="Test User", email="test@agendify.com", password="password123")
+    user.guardar()
+    return user
+
+# Fixture para proveer un cliente de Flask con una sesión activa ya simulada
+@pytest.fixture
+def auth_client(client, setup_user):
+    """
+    Retorna un cliente de pruebas con cookies de sesión ya inicializadas
+    con el ID del usuario de pruebas.
+    """
+    with client.session_transaction() as sess:
+        sess['user_id'] = setup_user.id
+        sess['user_name'] = setup_user.nombre
+    return client

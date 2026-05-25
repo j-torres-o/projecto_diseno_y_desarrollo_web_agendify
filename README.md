@@ -73,11 +73,12 @@ pytest -v
 
 ## 🗺️ Hoja de Ruta (Roadmap)
 
-- [x] **Fase 1 (Contextualización)**: Diseño de la estructura visual, maquetación (HTML/CSS) y frontend base (SPA).
-- [x] **Fase 2 (Profundización)**: Configuración de base de datos MySQL, POO, RESTful API con Flask (Blueprints) y lógica CRUD completa (Fetch API).
-- [x] **Fase 4 (Aseguramiento de Calidad)**: Suite de pruebas unitarias, de integración de extremo a extremo (E2E) en navegador real con Pytest.
-- [ ] **Fase 3 (Siguiente paso)**: Autenticación de Usuarios (Sesiones).
-- [ ] **Fase 5**: Despliegue en producción.
+- [x] **Fase 1 (Contextualización)**: Diseño de la estructura visual, maquetación adaptativa (HTML/CSS) y frontend base (SPA) basado en Tailwind CSS.
+- [x] **Fase 2 (Profundización)**: Configuración de base de datos MySQL normalizada, POO avanzada (abstracción, herencia, encapsulamiento en Python), RESTful API con Flask y lógica CRUD completa (Fetch API).
+- [x] **Fase 3 (Autenticación y Control de Sesión)**: Login de usuarios, sesiones de servidor seguras firmadas criptográficamente, decoradores de protección de rutas web y cierre de sesión.
+- [x] **Fase 4 (Aseguramiento de Calidad - QA)**: Ecosistema de pruebas automatizadas Pytest que abarca 39 pruebas (unitarias y de integración) aprobadas con 0 fallos, y pruebas funcionales interactuando con la interfaz mediante Puppeteer.
+- [x] **Fase 5 (Usabilidad Premium e Interactividad)**: Paginación dinámica asíncrona, filtros multi-criterio en tiempo real, autocomplete predictivo de organizadores estilo Teams/Calendar y diálogos de confirmación modales interactivos en la UI.
+- [ ] **Fase 6 (Siguiente paso)**: Despliegue del sistema a producción en la nube (SaaS).
 
 ## 🎓 Propósito Pedagógico
 Este proyecto ha sido desarrollado con fines educativos, documentando cada módulo para explicar conceptos fundamentales como el protocolo HTTP, manipulación del DOM, y persistencia de datos en sistemas relacionales.
